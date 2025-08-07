@@ -144,6 +144,8 @@ export const Settings = {
   ExcludeRunningScriptsFromSave: false,
   /**  Whether the game's sidebar is opened. */
   IsSidebarOpened: true,
+  /**  Whether the game's right panel (pinned windows) is opened. */
+  IsRightPanelOpened: true,
   /** Tail rendering intervall in ms */
   TailRenderInterval: 1000,
   /** Theme colors. */

@@ -27,6 +27,8 @@ import { useRerender } from "./hooks";
 import { dialogBoxCreate } from "./DialogBox";
 import { makeStyles } from "tss-react/mui";
 import { logBoxBaseZIndex } from "./Constants";
+import { PinnedWindowsManager } from "../PinnedWindows/PinnedWindowsManager";
+import PushPinOutlinedIcon from "@mui/icons-material/PushPinOutlined";
 let layerCounter = 0;
 
 export const LogBoxEvents = new EventEmitter<[RunningScript]>();
@@ -261,6 +263,11 @@ function LogWindow({ hidden, script, onClose }: LogWindowProps): React.ReactElem
     setMinimized(!minimized);
   }
 
+  function handlePin(): void {
+    PinnedWindowsManager.pinWindow(script);
+    onClose(); // Close the floating window after pinning
+  }
+
   function lineColor(s: string): "error" | "success" | "warn" | "info" | "primary" {
     if (s.match(/(^\[[^\]]+\] )?ERROR/) || s.match(/(^\[[^\]]+\] )?FAIL/)) {
       return "error";
@@ -396,6 +403,14 @@ function LogWindow({ hidden, script, onClose }: LogWindowProps): React.ReactElem
                   onTouchEnd={minimize}
                 >
                   {minimized ? <ExpandMoreIcon /> : <ExpandLessIcon />}
+                </IconButton>
+                <IconButton
+                  title="Pin window to sidebar"
+                  className={classes.titleButton}
+                  onClick={handlePin}
+                  onTouchEnd={handlePin}
+                >
+                  <PushPinOutlinedIcon />
                 </IconButton>
                 <IconButton title="Close window" className={classes.titleButton} onClick={onClose} onTouchEnd={onClose}>
                   <CloseIcon />

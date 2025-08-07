@@ -20,6 +20,7 @@ import type { ComplexPage } from "./Enums";
 import type { IRouter, PageContext, PageWithContext } from "./Router";
 import { isSimplePage, Page } from "./Router";
 import { Overview } from "./React/Overview";
+import { PinnedWindowsManager } from "./PinnedWindows/PinnedWindowsManager";
 import { SidebarRoot } from "../Sidebar/ui/SidebarRoot";
 import { AugmentationsRoot } from "../Augmentation/ui/AugmentationsRoot";
 import { DevMenuRoot } from "../DevMenu";
@@ -66,6 +67,7 @@ import { ErrorBoundary } from "./ErrorBoundary";
 import { ThemeBrowser } from "../Themes/ui/ThemeBrowser";
 import { ImportSave } from "./React/ImportSave";
 import { BypassWrapper } from "./React/BypassWrapper";
+import { PinnedWindowsProvider } from "./PinnedWindows/PinnedWindowsProvider";
 
 import { Apr1 } from "./Apr1";
 import { V2Modal } from "../utils/V2Modal";
@@ -504,31 +506,55 @@ export function GameRoot(): React.ReactElement {
     UIEventEmitter.emit(UIEventType.MainUILoaded);
   }, []);
 
+  // Check if overview is pinned to determine if we should render the floating overview
+  const [isOverviewPinned, setIsOverviewPinned] = useState(false);
+
+  useEffect(() => {
+    const updatePinnedStatus = () => {
+      const pinnedWindows = PinnedWindowsManager.getPinnedWindows();
+      const pinned = pinnedWindows.some((window) => window.script.pid === -1);
+      setIsOverviewPinned(pinned);
+    };
+
+    // Initial check
+    updatePinnedStatus();
+
+    // Subscribe to changes
+    const unsubscribe = PinnedWindowsManager.subscribe(updatePinnedStatus);
+
+    return unsubscribe;
+  }, []);
+
   return (
     <MathJaxContext version={3} src={__webpack_public_path__ + "mathjax/tex-chtml.js"}>
       <ErrorBoundary key={errorBoundaryKey} softReset={softReset}>
         <BypassWrapper content={bypassGame ? mainPage : null}>
           <HistoryProvider>
             <SnackbarProvider>
-              <Overview mode={ITutorial.isRunning ? "tutorial" : "overview"}>
-                {(parentOpen) =>
-                  !ITutorial.isRunning ? (
-                    <CharacterOverview
-                      parentOpen={parentOpen}
-                      save={() => {
-                        saveObject.saveGame().catch((error) => exceptionAlert(error));
-                      }}
-                      killScripts={killAllScripts}
-                    />
-                  ) : (
-                    <InteractiveTutorialRoot />
-                  )
-                }
-              </Overview>
+              {!isOverviewPinned && (
+                <Overview mode={ITutorial.isRunning ? "tutorial" : "overview"}>
+                  {(parentOpen) =>
+                    !ITutorial.isRunning ? (
+                      <CharacterOverview
+                        parentOpen={parentOpen}
+                        save={() => {
+                          saveObject.saveGame().catch((error) => exceptionAlert(error));
+                        }}
+                        killScripts={killAllScripts}
+                      />
+                    ) : (
+                      <InteractiveTutorialRoot />
+                    )
+                  }
+                </Overview>
+              )}
               {withSidebar ? (
                 <Box display="flex" flexDirection="row" width="100%">
                   <SidebarRoot page={pageWithContext.page} />
-                  <Box className={classes.root}>{mainPage}</Box>
+                  <Box className={classes.root} sx={{ flex: 1 }}>
+                    {mainPage}
+                  </Box>
+                  <PinnedWindowsProvider />
                 </Box>
               ) : (
                 <Box className={classes.root}>{mainPage}</Box>

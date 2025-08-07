@@ -7,11 +7,14 @@ import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import EqualizerIcon from "@mui/icons-material/Equalizer";
 import SchoolIcon from "@mui/icons-material/School";
+import PushPinOutlinedIcon from "@mui/icons-material/PushPinOutlined";
 import { Router } from "../GameRoot";
 import { Page } from "../Router";
 import { Settings } from "../../Settings/Settings";
 import { Box, Button, Typography } from "@mui/material";
 import { debounce } from "lodash";
+import { PinnedWindowsManager } from "../PinnedWindows/PinnedWindowsManager";
+import { RunningScript } from "../../Script/RunningScript";
 
 const useStyles = makeStyles()({
   overviewContainer: {
@@ -69,6 +72,30 @@ export function Overview({ children, mode }: IProps): React.ReactElement {
   const [x, setX] = useState(Settings.overview.x);
   const [y, setY] = useState(Settings.overview.y);
   const { classes } = useStyles();
+
+  // Check if overview is pinned and hide floating window if it is
+  const [, setIsOverviewPinned] = useState(false);
+
+  useEffect(() => {
+    const updatePinnedStatus = () => {
+      const pinnedWindows = PinnedWindowsManager.getPinnedWindows();
+      const pinned = pinnedWindows.some((window) => window.script.pid === -1);
+      setIsOverviewPinned(pinned);
+
+      // Hide floating overview if it's pinned
+      if (pinned && open) {
+        setOpen(false);
+      }
+    };
+
+    // Initial check
+    updatePinnedStatus();
+
+    // Subscribe to changes
+    const unsubscribe = PinnedWindowsManager.subscribe(updatePinnedStatus);
+
+    return unsubscribe;
+  }, [open]);
 
   const CurrentIcon = open ? KeyboardArrowUpIcon : KeyboardArrowDownIcon;
   const LeftIcon = mode === "tutorial" ? SchoolIcon : EqualizerIcon;
@@ -130,6 +157,75 @@ export function Overview({ children, mode }: IProps): React.ReactElement {
             <Typography flexGrow={1} color="secondary">
               {header}
             </Typography>
+            <Button
+              aria-label="pin overview to sidebar"
+              variant="text"
+              size="small"
+              className={classes.visibilityToggle}
+              onClick={() => {
+                // Create a special overview pinned window
+                const overviewScript = new RunningScript();
+                overviewScript.pid = -1; // Special PID for overview
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                overviewScript.filename = "Overview" as any;
+                overviewScript.title = "Overview";
+                overviewScript.server = "";
+                overviewScript.args = [];
+                overviewScript.logs = [];
+                overviewScript.ramUsage = 0;
+                overviewScript.onlineRunningTime = 0;
+                overviewScript.onlineExpGained = 0;
+                overviewScript.onlineMoneyMade = 0;
+                overviewScript.offlineRunningTime = 0;
+                overviewScript.offlineExpGained = 0;
+                overviewScript.offlineMoneyMade = 0;
+                overviewScript.dataMap = {};
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                overviewScript.scriptKey = "" as any;
+                overviewScript.parent = 0;
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                overviewScript.threads = 1 as any;
+                overviewScript.tailProps = null;
+                overviewScript.logUpd = false;
+                overviewScript.temporary = false;
+                overviewScript.dependencies = new Map();
+                PinnedWindowsManager.pinWindow(overviewScript);
+                // Close the floating overview when pinned
+                setOpen(false);
+              }}
+              onTouchEnd={() => {
+                const overviewScript = new RunningScript();
+                overviewScript.pid = -1; // Special PID for overview
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                overviewScript.filename = "Overview" as any;
+                overviewScript.title = "Overview";
+                overviewScript.server = "";
+                overviewScript.args = [];
+                overviewScript.logs = [];
+                overviewScript.ramUsage = 0;
+                overviewScript.onlineRunningTime = 0;
+                overviewScript.onlineExpGained = 0;
+                overviewScript.onlineMoneyMade = 0;
+                overviewScript.offlineRunningTime = 0;
+                overviewScript.offlineExpGained = 0;
+                overviewScript.offlineMoneyMade = 0;
+                overviewScript.dataMap = {};
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                overviewScript.scriptKey = "" as any;
+                overviewScript.parent = 0;
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                overviewScript.threads = 1 as any;
+                overviewScript.tailProps = null;
+                overviewScript.logUpd = false;
+                overviewScript.temporary = false;
+                overviewScript.dependencies = new Map();
+                PinnedWindowsManager.pinWindow(overviewScript);
+                // Close the floating overview when pinned
+                setOpen(false);
+              }}
+            >
+              <PushPinOutlinedIcon className={classes.icon} color="secondary" />
+            </Button>
             <Button
               aria-label="expand or collapse character overview"
               variant="text"
